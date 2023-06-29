@@ -1,11 +1,5 @@
 import 'package:flutter/material.dart';
-
-class Todo {
-  final String title;
-  final String description;
-
-  const Todo(this.title, this.description);
-}
+import './models/todo.dart';
 
 final List<Todo> _todoList = [
   Todo('Paint House', 'Paint it black'),
@@ -59,9 +53,18 @@ class _TodosScreen extends State<TodosScreen> {
                   child: const Text('Cancel')),
               TextButton(
                   onPressed: () {
+                    const Color color = Colors.red;
                     final String title = titleController.text;
                     final String description = descriptionController.text;
-                    if (title.isNotEmpty && description.isNotEmpty) {
+                    if (title.isEmpty || description.isEmpty) {
+                      if (title.isEmpty) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                            snackBar('Title can not be empty!', color));
+                      } else if (description.isEmpty) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                            snackBar('Description can not be empty!', color));
+                      }
+                    } else {
                       Navigator.pop(context, Todo(title, description));
                     }
                   },
@@ -73,6 +76,8 @@ class _TodosScreen extends State<TodosScreen> {
     if (result != null) {
       setState(() {
         _todoList.add(Todo(result.title, result.description));
+        ScaffoldMessenger.of(context).showSnackBar(
+            snackBar('Task has been successfully added!', Colors.green));
       });
     }
   }
@@ -120,44 +125,13 @@ class DetailScreen extends StatelessWidget {
   }
 }
 
-class FormScreen extends StatelessWidget {
-  FormScreen({super.key});
-
-  final TextEditingController titleController = TextEditingController();
-  final TextEditingController descriptionController = TextEditingController();
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-        appBar: AppBar(title: const Text('Task Form')),
-        body: Column(
-          mainAxisAlignment: MainAxisAlignment.start,
-          children: [
-            TextField(
-              controller: titleController,
-              decoration: const InputDecoration(hintText: 'Enter title'),
-            ),
-            TextField(
-              controller: descriptionController,
-              decoration: const InputDecoration(hintText: 'Enter Description'),
-            ),
-            Row(mainAxisAlignment: MainAxisAlignment.end, children: <Widget>[
-              TextButton(
-                  onPressed: () {
-                    Navigator.pop(context);
-                  },
-                  child: const Text('Cancel')),
-              TextButton(
-                  onPressed: () {
-                    final String title = titleController.text;
-                    final String description = descriptionController.text;
-                    if (title.isNotEmpty && description.isNotEmpty) {
-                      Navigator.pop(context, Todo(title, description));
-                    }
-                  },
-                  child: const Text('Save'))
-            ])
-          ],
-        ));
-  }
-}
+SnackBar snackBar(String message, Color color) => SnackBar(
+      content: Text(message),
+      action: SnackBarAction(
+        textColor: color,
+        label: 'X',
+        onPressed: () {
+          // Some code to undo the change.
+        },
+      ),
+    );
