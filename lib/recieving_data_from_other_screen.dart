@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:myapp/list_view.dart';
 
 class Todo {
   final String title;

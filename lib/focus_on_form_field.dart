@@ -7,7 +7,7 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(home: const MyCustomForm());
+    return const MaterialApp(home: MyCustomForm());
   }
 }
 
@@ -21,16 +21,24 @@ class MyCustomForm extends StatefulWidget {
 class _MyCustomFormState extends State<MyCustomForm> {
   late FocusNode myFocusNode;
 
+  final myController = TextEditingController();
   @override
   void initState() {
     super.initState();
     myFocusNode = FocusNode();
+    myController.addListener(_printLastestValue);
   }
 
   @override
   void dispose() {
     myFocusNode.dispose();
+    myController.dispose();
     super.dispose();
+  }
+
+  // method/function void _printLastesValue
+  void _printLastestValue() {
+    print('third field updated: ${myController.text}');
   }
 
   @override
@@ -38,18 +46,19 @@ class _MyCustomFormState extends State<MyCustomForm> {
     return Scaffold(
         appBar: AppBar(title: const Text('My Form')),
         body: Padding(
-          padding: EdgeInsets.all(16.0),
+          padding: const EdgeInsets.all(16.0),
           child: Column(
             children: <Widget>[
-              TextField(
+              const TextField(
                   decoration: InputDecoration(hintText: 'INPUT ONE'),
                   autofocus: true),
               TextField(
-                decoration: InputDecoration(hintText: 'INPUT TWO'),
+                decoration: const InputDecoration(hintText: 'INPUT TWO'),
                 focusNode: myFocusNode,
               ),
               TextField(
-                decoration: InputDecoration(hintText: 'INPUT THREE'),
+                decoration: const InputDecoration(hintText: 'INPUT THREE'),
+                controller: myController,
               ),
             ],
           ),
