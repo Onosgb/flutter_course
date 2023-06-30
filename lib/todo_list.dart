@@ -1,99 +1,135 @@
 import 'package:flutter/material.dart';
+import './models/todo.dart';
 
-class MyHomePage extends StatelessWidget {
-  const MyHomePage({super.key});
+final List<Todo> _todoList = [
+  Todo('Paint House', 'Paint it black'),
+  Todo('Pet the dog', 'Use combo to brush as well')
+];
+
+class TodosScreen extends StatefulWidget {
+  const TodosScreen({Key? key, required this.todos}) : super(key: key);
+
+  final List<Todo> todos;
+
   @override
-  Widget build(BuildContext context) {
-    return const MaterialApp(
-        title: 'List with dialog', home: MyHomePageState());
-  }
+  State<TodosScreen> createState() => _TodosScreen();
 }
 
-class MyHomePageState extends StatefulWidget {
-  const MyHomePageState({super.key});
-  @override
-  State<MyHomePageState> createState() => _MyHomePage();
-}
-
-class _MyHomePage extends State<MyHomePageState> {
-  List<String> _todos = ['task', 'task', 'task', 'task', 'task'];
-
-// Dialog Box Pop-up;
-// Text input --> add to the _todos;
-
-// ListView.builder --> ListTiles _todos;
-
-  void _addTodo() {
-    showDialog(
+class _TodosScreen extends State<TodosScreen> {
+  // using the alert method
+  void _addTask() async {
+    final Todo? result = await showDialog(
         context: context,
         builder: (BuildContext context) {
-          TextEditingController taskController = TextEditingController();
+          TextEditingController titleController = TextEditingController();
+          TextEditingController descriptionController = TextEditingController();
+
           return AlertDialog(
-            title: const Text('Enter new tab below'),
-            content: TextField(
-              controller: taskController,
-              decoration: const InputDecoration(hintText: 'Enter some text'),
-            ),
+            title: const Text('Add task'),
+            content: SizedBox(
+                height: 120,
+                width: 100,
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.start,
+                  children: [
+                    TextField(
+                      controller: titleController,
+                      decoration: const InputDecoration(labelText: 'Title'),
+                    ),
+                    TextField(
+                      controller: descriptionController,
+                      decoration:
+                          const InputDecoration(labelText: 'Description'),
+                    )
+                  ],
+                )),
             actions: <Widget>[
               TextButton(
-                child: const Text('Cancel'),
-                onPressed: () {
-                  Navigator.of(context).pop();
-                },
-              ),
+                  onPressed: () {
+                    Navigator.pop(context);
+                  },
+                  child: const Text('Cancel')),
               TextButton(
-                child: const Text('Save'),
-                onPressed: () {
-                  setState(() {
-                    _todos.add(taskController.text);
-                  });
-                  Navigator.of(context).pop();
-                },
-              )
+                  onPressed: () {
+                    const Color color = Colors.red;
+                    final String title = titleController.text;
+                    final String description = descriptionController.text;
+                    if (title.isEmpty || description.isEmpty) {
+                      if (title.isEmpty) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                            snackBar('Title can not be empty!', color));
+                      } else if (description.isEmpty) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                            snackBar('Description can not be empty!', color));
+                      }
+                    } else {
+                      Navigator.pop(context, Todo(title, description));
+                    }
+                  },
+                  child: const Text('Save'))
             ],
           );
         });
+
+    if (result != null) {
+      setState(() {
+        _todoList.add(Todo(result.title, result.description));
+        ScaffoldMessenger.of(context).showSnackBar(
+            snackBar('Task has been successfully added!', Colors.green));
+      });
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('My todo list')),
+      appBar: AppBar(title: const Text('Tasks')),
       body: ListView.builder(
-        itemCount: _todos.length,
+        itemCount: _todoList.length,
         itemBuilder: (BuildContext context, int index) {
-          final todo = _todos[index];
+          final todo = _todoList[index];
           return ListTile(
-            title: Text("$todo ${index + 1}",
-                style: TextStyle(
-                    decoration: todo.startsWith('-')
-                        ? TextDecoration.lineThrough
-                        : TextDecoration.none)),
-            trailing: IconButton(
-              color: Colors.redAccent,
-              onPressed: () {
-                setState(() {
-                  _todos.removeAt(index);
-                });
-              },
-              icon: const Icon(Icons.delete),
-            ),
+            title: Text(todo.title),
             onTap: () {
-              if (todo.startsWith('-')) {
-                setState(() {
-                  _todos[index] = todo.substring(2);
-                });
-              } else {
-                setState(() {
-                  _todos[index] = '- $todo';
-                });
-              }
+              Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                      builder: (context) => DetailScreen(todo: todo)));
             },
           );
         },
       ),
       floatingActionButton: FloatingActionButton(
-          onPressed: _addTodo, child: const Icon(Icons.add)),
+        onPressed: _addTask,
+        child: const Icon(Icons.add),
+      ),
     );
   }
 }
+
+class DetailScreen extends StatelessWidget {
+  const DetailScreen({Key? key, required this.todo}) : super(key: key);
+
+  final Todo todo;
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+        appBar: AppBar(title: Text(todo.title)),
+        body: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Text(todo.description),
+        ));
+  }
+}
+
+SnackBar snackBar(String message, Color color) => SnackBar(
+      content: Text(message),
+      action: SnackBarAction(
+        textColor: color,
+        label: 'X',
+        onPressed: () {
+          // Some code to undo the change.
+        },
+      ),
+    );
