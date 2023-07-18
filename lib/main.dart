@@ -1,86 +1,115 @@
 import 'package:flutter/material.dart';
+import 'package:path_provider/path_provider.dart';
+import 'dart:async';
+import 'dart:io';
 
-void main() => runApp(const MyApp());
+void main() {
+  runApp(MaterialApp(
+      title: 'Demo',
+      home: FlutterDemo(
+        storage: Storage(),
+      )));
+}
 
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+// Storage
 
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-        title: 'MyApp',
-        home: Scaffold(
-            appBar: AppBar(title: const Text('Form Validation')),
-            body: const MyCustomForm()));
+class Storage {
+  // Path
+  Future<String> get _localPath async {
+    final directory = await getApplicationDocumentsDirectory();
+
+    return directory.path;
+  }
+
+  // File
+  Future<File> get _localFile async {
+    final path = await _localPath;
+
+    return File('$path/input.txt');
+  }
+
+  // Read what's inside the counter file
+  Future<String> readUserInput() async {
+    try {
+      final file = await _localFile;
+      return await file.readAsString();
+    } catch (error) {
+      return '';
+    }
+  }
+
+  // Write to a File;
+  Future<File> writeUserInput(String userInput) async {
+    final file = await _localFile;
+
+    return file.writeAsString(userInput);
   }
 }
 
-class MyCustomForm extends StatefulWidget {
-  const MyCustomForm({Key? key}) : super(key: key);
+//Statefulwidget
+
+class FlutterDemo extends StatefulWidget {
+  const FlutterDemo({Key? key, required this.storage}) : super(key: key);
+
+  final Storage storage;
+
   @override
-  State<MyCustomForm> createState() => _MyCustomFormState();
+  State<FlutterDemo> createState() => _FlutterDemoState();
 }
 
-class _MyCustomFormState extends State<MyCustomForm> {
-  final _formKey = GlobalKey<FormState>();
+// State
 
-  final firstController = TextEditingController();
-  final secondController = TextEditingController();
+class _FlutterDemoState extends State<FlutterDemo> {
+  final userInputController = TextEditingController();
 
-// dispose
+  @override
+  void initState() {
+    super.initState();
+    widget.storage.readUserInput().then((value) => {
+          setState(() {
+            userInputController.text = value;
+          })
+        });
+  }
+
   @override
   void dispose() {
-    firstController.dispose();
-    secondController.dispose();
     super.dispose();
+    userInputController.dispose();
+  }
+
+  Future<File> _saveUserInput() {
+    return widget.storage.writeUserInput(userInputController.text);
   }
 
   @override
   Widget build(BuildContext context) {
-    return Form(
-      key: _formKey,
-      child: Column(
-        children: <Widget>[
-          TextFormField(
-            controller: firstController,
-            decoration: const InputDecoration(labelText: 'Name'),
-            validator: (value) {
-              if (value == null || value.isEmpty) {
-                return 'Please enter name';
-              }
-
-              return null;
+    return Scaffold(
+        appBar: AppBar(
+            title: Text(userInputController.text.isEmpty
+                ? 'Demo'
+                : userInputController.text)),
+        body: Center(
+          child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: <Widget>[
+                  TextField(
+                    controller: userInputController,
+                    decoration: const InputDecoration(labelText: 'Enter text'),
+                  ),
+                ],
+              )),
+        ),
+        floatingActionButton: FloatingActionButton(
+            onPressed: () {
+              setState(() {
+                _saveUserInput();
+              });
             },
-          ),
-          TextFormField(
-            controller: secondController,
-            decoration: const InputDecoration(labelText: 'Email'),
-            validator: (value) {
-              if (value == null || value.isEmpty) {
-                return 'Please enter email';
-              }
-
-              if (!value.contains("@")) {
-                return 'Please enter a valid email';
-              }
-
-              return null;
-            },
-          ),
-          Padding(
-              padding: const EdgeInsets.symmetric(vertical: 16.0),
-              child: ElevatedButton(
-                onPressed: () {
-                  if (_formKey.currentState!.validate()) {
-                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                        content: Text(
-                            'Name was: ${firstController.text} and Email was: ${secondController.text}')));
-                  }
-                },
-                child: const Text('Submit'),
-              ))
-        ],
-      ),
-    );
+            tooltip: 'Save',
+            child: const Icon(Icons.save)));
   }
 }
+// Form TextInput TextEditingController

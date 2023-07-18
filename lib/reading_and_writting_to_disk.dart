@@ -4,81 +4,112 @@ import 'dart:async';
 import 'dart:io';
 
 void main() {
-  runApp(
-      MaterialApp(title: 'Demo', home: FlutterDemo(storage: CounterStorage())));
+  runApp(MaterialApp(
+      title: 'Demo',
+      home: FlutterDemo(
+        storage: Storage(),
+      )));
 }
 
-class CounterStorage {
-  // Get the local path
+// Storage
+
+class Storage {
+  // Path
   Future<String> get _localPath async {
     final directory = await getApplicationDocumentsDirectory();
 
     return directory.path;
   }
 
-// TXT FILE INSIDE of DOC DIR
+  // File
   Future<File> get _localFile async {
     final path = await _localPath;
 
-    return File('$path/counter.txt');
+    return File('$path/input.txt');
   }
 
-// READ WHAT'S INSIDE counter.txt;
-  Future<int> readCounter() async {
+  // Read what's inside the counter file
+  Future<String> readUserInput() async {
     try {
       final file = await _localFile;
-      final contents = await file.readAsString();
-      return int.parse(contents);
+      return await file.readAsString();
     } catch (error) {
-      return 0; // first time superapp is opened!
+      return '';
     }
   }
 
-// WRITE THE COUNT TO count.txt;
-  Future<File> writeCounter(int counter) async {
+  // Write to a File;
+  Future<File> writeUserInput(String userInput) async {
     final file = await _localFile;
-    return file.writeAsString('$counter');
+
+    return file.writeAsString(userInput);
   }
 }
 
-class FlutterDemo extends StatefulWidget {
-  const FlutterDemo({super.key, required this.storage});
+//Statefulwidget
 
-  final CounterStorage storage;
+class FlutterDemo extends StatefulWidget {
+  const FlutterDemo({Key? key, required this.storage}) : super(key: key);
+
+  final Storage storage;
 
   @override
   State<FlutterDemo> createState() => _FlutterDemoState();
 }
 
+// State
+
 class _FlutterDemoState extends State<FlutterDemo> {
-  int _counter = 0;
+  final userInputController = TextEditingController();
 
   @override
   void initState() {
     super.initState();
-    widget.storage.readCounter().then((value) {
-      setState(() {
-        _counter = value;
-      });
-    });
+    widget.storage.readUserInput().then((value) => {
+          setState(() {
+            userInputController.text = value;
+          })
+        });
   }
 
-  Future<File> _incrementCounter() {
-    setState(() {
-      _counter++;
-    });
-    return widget.storage.writeCounter(_counter);
+  @override
+  void dispose() {
+    super.dispose();
+    userInputController.dispose();
+  }
+
+  Future<File> _saveUserInput() {
+    return widget.storage.writeUserInput(userInputController.text);
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('App Bar')),
-      body: Center(
-        child: Text('Button was tapped: $_counter'),
-      ),
-      floatingActionButton: FloatingActionButton(
-          onPressed: _incrementCounter, child: const Icon(Icons.add)),
-    );
+        appBar: AppBar(
+            title: Text(userInputController.text.isEmpty
+                ? 'Demo'
+                : userInputController.text)),
+        body: Center(
+          child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: <Widget>[
+                  TextField(
+                    controller: userInputController,
+                    decoration: const InputDecoration(labelText: 'Enter text'),
+                  ),
+                ],
+              )),
+        ),
+        floatingActionButton: FloatingActionButton(
+            onPressed: () {
+              setState(() {
+                _saveUserInput();
+              });
+            },
+            tooltip: 'Save',
+            child: const Icon(Icons.save)));
   }
 }
+// Form TextInput TextEditingController
