@@ -8,17 +8,17 @@ class Todo {
 }
 
 final List<Todo> todoList = [
-  Todo('Paint House', 'Paint it black'),
-  Todo('Pet the dog', 'Use combo to brush as well')
+  const Todo('Paint House', 'Paint it black'),
+  const Todo('Pet the dog', 'Use combo to brush as well')
 ];
 
-void main() => runApp(MyApp());
+void main() => runApp(const MyApp());
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(title: 'App', home: HomeScreen());
+    return const MaterialApp(title: 'App', home: HomeScreen());
   }
 }
 
@@ -72,7 +72,7 @@ class SelectScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-        appBar: AppBar(title: Text('Select an option')),
+        appBar: AppBar(title: const Text('Select an option')),
         body: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[

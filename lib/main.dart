@@ -1,115 +1,102 @@
 import 'package:flutter/material.dart';
-import 'package:path_provider/path_provider.dart';
 import 'dart:async';
-import 'dart:io';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
+import 'package:myapp/focus_on_form_field.dart';
 
-void main() {
-  runApp(MaterialApp(
-      title: 'Demo',
-      home: FlutterDemo(
-        storage: Storage(),
-      )));
+// Website --> Album JSON --> Dart class --> present the info Flutter
+
+// DART CLASS <-> JSON
+//  class Album userId, id, title
+// fromJSON --> Dart Object
+
+class Album {
+  final int userId;
+  final int id;
+  final String title;
+
+  const Album({required this.userId, required this.id, required this.title});
+
+  // fatory keyword
+  // var myAlbum = Album(1,2,'This is my album');
+  // method --> create an instance of object;
+  factory Album.fromJson(Map<String, dynamic> json) {
+    return Album(userId: json["userId"], id: json["id"], title: json["title"]);
+  }
 }
+// Function async Future Album (grab from the website)
 
-// Storage
+Future<Album> fetchAlbum(int id) async {
+  final response = await http
+      .get(Uri.parse('https://jsonplaceholder.typicode.com/albums/$id'));
 
-class Storage {
-  // Path
-  Future<String> get _localPath async {
-    final directory = await getApplicationDocumentsDirectory();
-
-    return directory.path;
-  }
-
-  // File
-  Future<File> get _localFile async {
-    final path = await _localPath;
-
-    return File('$path/input.txt');
-  }
-
-  // Read what's inside the counter file
-  Future<String> readUserInput() async {
-    try {
-      final file = await _localFile;
-      return await file.readAsString();
-    } catch (error) {
-      return '';
-    }
-  }
-
-  // Write to a File;
-  Future<File> writeUserInput(String userInput) async {
-    final file = await _localFile;
-
-    return file.writeAsString(userInput);
+  if (response.statusCode == 200) {
+    return Album.fromJson(jsonDecode(response.body));
+  } else {
+    throw Exception('Faliure to load album');
   }
 }
 
-//Statefulwidget
+// Flutter App --> Text(Widget)
 
-class FlutterDemo extends StatefulWidget {
-  const FlutterDemo({Key? key, required this.storage}) : super(key: key);
+void main() => runApp(const MyApp());
 
-  final Storage storage;
+class MyApp extends StatefulWidget {
+  const MyApp({Key? key}) : super(key: key);
 
   @override
-  State<FlutterDemo> createState() => _FlutterDemoState();
+  State<MyApp> createState() => _MyAppState();
 }
 
-// State
+class _MyAppState extends State<MyApp> {
+  late Future<Album> futureAlbum;
+  final TextEditingController _controller = TextEditingController();
 
-class _FlutterDemoState extends State<FlutterDemo> {
-  final userInputController = TextEditingController();
+  void _fetchAlbum() {
+    int albumId = int.tryParse(_controller.text) ?? 1;
+
+    setState(() {
+      futureAlbum = fetchAlbum(albumId);
+    });
+  }
 
   @override
   void initState() {
     super.initState();
-    widget.storage.readUserInput().then((value) => {
-          setState(() {
-            userInputController.text = value;
-          })
-        });
-  }
-
-  @override
-  void dispose() {
-    super.dispose();
-    userInputController.dispose();
-  }
-
-  Future<File> _saveUserInput() {
-    return widget.storage.writeUserInput(userInputController.text);
+    futureAlbum = fetchAlbum(1);
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-        appBar: AppBar(
-            title: Text(userInputController.text.isEmpty
-                ? 'Demo'
-                : userInputController.text)),
-        body: Center(
-          child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: <Widget>[
+    return MaterialApp(
+        title: 'demo',
+        theme: ThemeData(primarySwatch: Colors.red),
+        home: Scaffold(
+            appBar: AppBar(title: const Text("GET HTTP EXAMPLE")),
+            body: Center(
+                child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: <Widget>[
                   TextField(
-                    controller: userInputController,
-                    decoration: const InputDecoration(labelText: 'Enter text'),
+                    controller: _controller,
+                    decoration:
+                        const InputDecoration(labelText: 'Album ID Number'),
+                    keyboardType: TextInputType.number,
                   ),
-                ],
-              )),
-        ),
-        floatingActionButton: FloatingActionButton(
-            onPressed: () {
-              setState(() {
-                _saveUserInput();
-              });
-            },
-            tooltip: 'Save',
-            child: const Icon(Icons.save)));
+                  ElevatedButton(
+                      onPressed: _fetchAlbum, child: const Text('Submit')),
+                  FutureBuilder<Album>(
+                    future: futureAlbum,
+                    builder: (BuildContext context, snapshot) {
+                      if (snapshot.hasData) {
+                        return Text(snapshot.data!.title);
+                      } else if (snapshot.hasError) {
+                        return Text(snapshot.error.toString());
+                      } else {
+                        return const CircularProgressIndicator();
+                      }
+                    },
+                  ),
+                ]))));
   }
 }
-// Form TextInput TextEditingController

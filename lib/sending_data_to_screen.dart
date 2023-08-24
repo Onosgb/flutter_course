@@ -8,8 +8,8 @@ class Todo {
 }
 
 final List<Todo> todoList = [
-  Todo('Paint House', 'Paint it black'),
-  Todo('Pet the dog', 'Use combo to brush as well')
+  const Todo('Paint House', 'Paint it black'),
+  const Todo('Pet the dog', 'Use combo to brush as well')
 ];
 
 void main() =>
